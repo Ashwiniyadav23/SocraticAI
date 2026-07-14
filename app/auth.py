@@ -51,5 +51,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
 
 async def require_mentor(user: User = Depends(get_current_user)) -> User:
     if user.role != "mentor":
-        raise HTTPException(status_code=403, detail="Mentor role required")
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied: Mentor role required. Your account has role='{user.role}'."
+        )
     return user

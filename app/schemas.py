@@ -11,6 +11,11 @@ class UserCreate(BaseModel):
     role: str = "student"
 
 
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
 class UserOut(BaseModel):
     id: uuid.UUID
     email: EmailStr

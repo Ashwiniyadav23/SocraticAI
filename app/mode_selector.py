@@ -7,6 +7,8 @@ CURIOSITY_THRESHOLD = 0.5
 def select_mode(state: LearnerState, signals: Signals, user_selected: str | None, domain: str) -> str:
     if signals.misconception_flag:
         return "MISCONCEPTION_CORRECTOR"
+    if signals.shared_ai_usage:
+        return "AI_LITERACY_COACH"
     if signals.overload_flag:
         return "FOUNDATION_BUILDER"
     if state == LearnerState.CONFUSED and signals.confidence < 0.3:

@@ -62,6 +62,7 @@ async def ws_turn(websocket: WebSocket, session_id: uuid.UUID, token: str):
                     stuck=stuck,
                     contradiction=bool(misc.get("misconception")),
                     correct_baseline=bool(diag.get("correct_baseline")),
+                    shared_ai_usage=bool(diag.get("shared_ai_usage")),
                 )
                 prev_state = LearnerState(session.current_state)
                 new_state, unresolved = transition(prev_state, session.unresolved_turns, signals)

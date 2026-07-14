@@ -33,6 +33,11 @@ FALLBACK_HINT_TEMPLATE = (
     "what's the very first thing you're unsure about? Start there."
 )
 
+FALLBACK_LLM_UNAVAILABLE = (
+    "I'm having a little trouble thinking right now (LLM service unavailable). "
+    "Let's keep going — can you tell me what you've tried so far?"
+)
+
 
 async def run_turn(
     db: AsyncSession,
@@ -49,10 +54,14 @@ async def run_turn(
     await append_message(session_id, "student", student_message)
 
     # ---- 1. Diagnostic Agent (sequential, first) ----
-    diag = await asyncio.wait_for(
-        diagnostic_agent.run_diagnostic(concept.name, recent_turns, student_message),
-        timeout=settings.AGENT_TIMEOUT_SECONDS,
-    ) if True else {}
+    try:
+        diag = await asyncio.wait_for(
+            diagnostic_agent.run_diagnostic(concept.name, recent_turns, student_message),
+            timeout=settings.AGENT_TIMEOUT_SECONDS,
+        )
+    except (asyncio.TimeoutError, Exception) as e:  # noqa: BLE001
+        logger.warning("diagnostic agent timeout/error: %s", e)
+        diag = {"confidence": 0.5, "correct_baseline": False}
 
     # ---- 2. Parallel: Misconception Agent + non-LLM heuristics ----
     async def _misconception():
@@ -90,6 +99,7 @@ async def run_turn(
         transfer_solved=False,  # set true via mastery flow / explicit assessment endpoint
         coherent_teach_back=False,
         correct_baseline=bool(diag.get("correct_baseline")),
+        shared_ai_usage=bool(diag.get("shared_ai_usage")),
     )
 
     # ---- 3. Orchestrator: state machine + mode selector ----
@@ -101,25 +111,37 @@ async def run_turn(
     hint_instr = tier_instruction(new_tier)
 
     # ---- 4. Socratic Questioning Agent ----
-    tutor_message = await asyncio.wait_for(
-        socratic_agent.generate_response(mode, concept.name, recent_turns, student_message, hint_instr),
-        timeout=settings.AGENT_TIMEOUT_SECONDS,
-    )
+    try:
+        tutor_message = await asyncio.wait_for(
+            socratic_agent.generate_response(mode, concept.name, recent_turns, student_message, hint_instr),
+            timeout=settings.AGENT_TIMEOUT_SECONDS,
+        )
+    except (asyncio.TimeoutError, Exception) as e:  # noqa: BLE001
+        logger.warning("socratic agent timeout/error: %s", e)
+        tutor_message = FALLBACK_LLM_UNAVAILABLE
 
     # ---- 5. Answer-Leak Guard (final gate, max 1 retry then fallback template) ----
-    leaked, reason = await check_leak(tutor_message)
+    try:
+        leaked, reason = await check_leak(tutor_message)
+    except Exception as e:  # noqa: BLE001
+        logger.warning("leak guard error: %s", e)
+        leaked, reason = False, ""
     leak_triggered = leaked
     if leaked:
         logger.info("leak guard triggered: %s", reason)
         corrective = "You just gave away the answer. Rephrase your last message as a guiding question instead."
-        tutor_message = await asyncio.wait_for(
-            socratic_agent.generate_response(
-                mode, concept.name, recent_turns, student_message, hint_instr, corrective=corrective
-            ),
-            timeout=settings.AGENT_TIMEOUT_SECONDS,
-        )
-        leaked_again, _ = await check_leak(tutor_message)
-        if leaked_again:
+        try:
+            tutor_message = await asyncio.wait_for(
+                socratic_agent.generate_response(
+                    mode, concept.name, recent_turns, student_message, hint_instr, corrective=corrective
+                ),
+                timeout=settings.AGENT_TIMEOUT_SECONDS,
+            )
+            leaked_again, _ = await check_leak(tutor_message)
+            if leaked_again:
+                tutor_message = FALLBACK_HINT_TEMPLATE
+        except (asyncio.TimeoutError, Exception) as e:  # noqa: BLE001
+            logger.warning("socratic agent retry timeout/error: %s", e)
             tutor_message = FALLBACK_HINT_TEMPLATE
 
     db.add(HintLog(
