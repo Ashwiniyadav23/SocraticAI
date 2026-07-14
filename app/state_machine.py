@@ -34,6 +34,7 @@ class Signals:
         transfer_solved: bool = False,
         coherent_teach_back: bool = False,
         correct_baseline: bool = False,
+        shared_ai_usage: bool = False,
     ):
         self.confidence = confidence
         self.misconception_flag = misconception_flag
@@ -45,6 +46,7 @@ class Signals:
         self.transfer_solved = transfer_solved
         self.coherent_teach_back = coherent_teach_back
         self.correct_baseline = correct_baseline
+        self.shared_ai_usage = shared_ai_usage
 
 
 def transition(state: LearnerState, unresolved_turns: int, signals: Signals) -> tuple[LearnerState, int]:

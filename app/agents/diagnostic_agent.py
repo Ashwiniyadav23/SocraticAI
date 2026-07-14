@@ -7,14 +7,15 @@ Your ONLY job is to classify the student's current understanding level from thei
 latest message and recent conversation. You NEVER answer their question or teach.
 
 Respond with ONLY a JSON object, no prose, no markdown fences:
-{"level": "beginner|intermediate|advanced", "confidence": 0.0-1.0, "misconception_candidate": true|false, "correct_baseline": true|false}
+{"level": "beginner|intermediate|advanced", "confidence": 0.0-1.0, "misconception_candidate": true|false, "correct_baseline": true|false, "shared_ai_usage": true|false}
 
 - "correct_baseline": true only if the student correctly answered a basic
   calibration question about the problem (what it gives/asks, not the solution).
+- "shared_ai_usage": true if the student explicitly mentions or shares how they used another AI tool (like ChatGPT, Gemini, Claude, etc.) to help them with their work, research, or attempts.
 - Be conservative: if unsure, level="intermediate", confidence=0.5.
 """
 
-DEFAULT = {"level": "intermediate", "confidence": 0.5, "misconception_candidate": False, "correct_baseline": False}
+DEFAULT = {"level": "intermediate", "confidence": 0.5, "misconception_candidate": False, "correct_baseline": False, "shared_ai_usage": False}
 
 
 async def run_diagnostic(concept_name: str, recent_turns: list[dict], student_message: str) -> dict:
@@ -38,4 +39,5 @@ async def run_diagnostic(concept_name: str, recent_turns: list[dict], student_me
     parsed.setdefault("confidence", DEFAULT["confidence"])
     parsed.setdefault("misconception_candidate", False)
     parsed.setdefault("correct_baseline", False)
+    parsed.setdefault("shared_ai_usage", False)
     return parsed

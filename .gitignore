@@ -49,8 +49,10 @@ coverage.xml
 .pytest_cache/
 cover/
 
-# Environments
+# Environments — block ALL .env files including .env.example
+# (copy .env.example manually; never commit real keys)
 .env
+.env.*
 .venv
 env/
 venv/

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.database import init_db
-from app.routers import auth_router, mentor_router, profile_router, reflection_router, session_router, ws_router
+from app.routers import auth_router, mentor_router, profile_router, reflection_router, session_router, ws_router, speech_router
 
 logging.basicConfig(level=logging.INFO)
 
@@ -29,6 +29,7 @@ app.include_router(profile_router.router)
 app.include_router(reflection_router.router)
 app.include_router(mentor_router.router)
 app.include_router(ws_router.router)
+app.include_router(speech_router.router)
 
 
 @app.on_event("startup")
