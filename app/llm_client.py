@@ -92,3 +92,32 @@ def safe_json_parse(text: str, default: dict) -> dict:
                 pass
         logger.warning("JSON parse failed, using default fallback: %r", text[:200])
         return default
+
+
+async def transcribe_audio(audio_file_bytes: bytes, filename: str) -> str:
+    """Transcribes audio file using OpenAI compatible STT API (e.g. Whisper)."""
+    try:
+        # Pass a tuple to file parameter representing (filename, file_bytes)
+        resp = await _client.audio.transcriptions.create(
+            file=(filename, audio_file_bytes),
+            model="whisper-1",
+        )
+        return resp.text or ""
+    except Exception as e:
+        logger.error("STT transcription failed: %s", e)
+        raise
+
+
+async def synthesize_speech(text: str, voice: str = "alloy") -> bytes:
+    """Synthesizes text into speech using OpenAI compatible TTS API."""
+    try:
+        resp = await _client.audio.speech.create(
+            model="tts-1",
+            voice=voice,
+            input=text,
+        )
+        return await resp.aread()
+    except Exception as e:
+        logger.error("TTS synthesis failed: %s", e)
+        raise
+
