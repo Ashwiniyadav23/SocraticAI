@@ -78,9 +78,7 @@ export default function ChatPage() {
         
         setIsTyping(true); // Indicate processing
         try {
-          const { data } = await api.post("/v1/speech/transcribe", formData, {
-            headers: { "Content-Type": "multipart/form-data" }
-          });
+          const { data } = await api.post("/v1/speech/transcribe", formData);
           if (data.transcript) {
             handleSend(data.transcript);
           } else {

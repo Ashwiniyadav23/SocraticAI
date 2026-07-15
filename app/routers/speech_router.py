@@ -69,7 +69,7 @@ async def transcribe(
 
     Accepted formats: webm, wav, mp3, ogg, flac, mp4 (anything Whisper supports).
     """
-    content_type = file.content_type or "application/octet-stream"
+    content_type = (file.content_type or "application/octet-stream").split(";")[0].strip()
     if content_type not in ALLOWED_AUDIO_TYPES:
         raise HTTPException(
             status_code=415,
