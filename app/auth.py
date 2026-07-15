@@ -12,7 +12,7 @@ from app.config import settings
 from app.database import get_db
 from app.models import User
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
 
 
@@ -54,5 +54,14 @@ async def require_mentor(user: User = Depends(get_current_user)) -> User:
         raise HTTPException(
             status_code=403,
             detail=f"Access denied: Mentor role required. Your account has role='{user.role}'."
+        )
+    return user
+
+
+async def require_admin(user: User = Depends(get_current_user)) -> User:
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied: Admin role required. Your account has role='{user.role}'."
         )
     return user

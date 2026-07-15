@@ -4,7 +4,7 @@ LLM classifier for subtler leaks."""
 import re
 
 from app.config import settings
-from app.llm_client import chat, safe_json_parse
+from app.ai.model_router import chat, safe_json_parse
 
 # Deterministic rule 1: a complete, runnable-looking code block is a strong
 # leak signal for coding problems (full function body, not a skeleton/blank).
@@ -29,13 +29,7 @@ def _rule_based_leak(text: str) -> bool:
     return False
 
 
-SYSTEM_PROMPT = """You check whether a tutor's message accidentally reveals the
-direct solution to the student's problem instead of asking a guiding question.
-Respond with ONLY JSON: {"leak": true|false, "reason": "short string"}
-A message that asks a question, gives a hint, or provides a SKELETON with
-blanks is NOT a leak. A message that states the final approach/code/answer
-outright IS a leak.
-"""
+from app.ai.prompts.leak_guard_prompts import SYSTEM_PROMPT
 
 
 async def check_leak(tutor_message: str) -> tuple[bool, str]:

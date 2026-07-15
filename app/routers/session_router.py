@@ -1,17 +1,17 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Concept, LearningSession, User
-from app.orchestrator import run_turn
+from app.ai.orchestrator import run_turn
+from app.agents.topic_agent import extract_topic
 from app.schemas import SessionCreate, SessionOut, StateOut, TurnCreate, TurnOut
 
 router = APIRouter(prefix="/v1/session", tags=["session"])
-
 
 async def _get_or_create_concept(db: AsyncSession, name: str) -> Concept:
     result = await db.execute(select(Concept).where(Concept.name == name))
@@ -23,6 +23,18 @@ async def _get_or_create_concept(db: AsyncSession, name: str) -> Concept:
         await db.refresh(concept)
     return concept
 
+from app.database import get_db, db as db_manager
+
+async def _extract_and_update_topic(session_id: uuid.UUID, message: str):
+    """Background task to extract topic from first message and update the session."""
+    topic = await extract_topic(message)
+    if topic != "General Inquiry":
+        async with db_manager.session_maker() as db:
+            concept = await _get_or_create_concept(db, topic)
+            session = await db.get(LearningSession, session_id)
+            if session:
+                session.concept_id = concept.id
+                await db.commit()
 
 @router.post("", response_model=SessionOut)
 async def start_session(payload: SessionCreate, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
@@ -35,11 +47,25 @@ async def start_session(payload: SessionCreate, user: User = Depends(get_current
     await db.refresh(session)
     return session
 
+@router.post("/auto", response_model=SessionOut)
+async def start_session_auto(payload: TurnCreate, background_tasks: BackgroundTasks, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """Auto-starts a session with 'General Inquiry' and triggers background topic extraction."""
+    concept = await _get_or_create_concept(db, "General Inquiry")
+    session = LearningSession(user_id=user.id, concept_id=concept.id, current_state="UNKNOWN")
+    db.add(session)
+    await db.commit()
+    await db.refresh(session)
+    
+    # Schedule background topic extraction
+    background_tasks.add_task(_extract_and_update_topic, session.id, payload.message)
+    
+    return session
 
 @router.post("/{session_id}/turn", response_model=TurnOut)
 async def post_turn(
     session_id: uuid.UUID,
     payload: TurnCreate,
+    background_tasks: BackgroundTasks,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -52,7 +78,7 @@ async def post_turn(
         raise HTTPException(status_code=404, detail="Session not found")
     concept = await db.get(Concept, session.concept_id)
 
-    result = await run_turn(db, session, concept, payload.message)
+    result = await run_turn(db, session, concept, payload.message, background_tasks=background_tasks)
     return TurnOut(session_id=session.id, **result)
 
 

@@ -8,19 +8,20 @@ import uuid
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy import select
 
-from app.agents import diagnostic_agent, heuristics, misconception_agent, socratic_agent
+from app.agents import diagnostic_agent, misconception_agent, socratic_agent
+from app.ai import behavior_engine as heuristics
 from app.agents.answer_leak_guard import check_leak
 from app.auth import get_current_user
 from app.config import settings
-from app.database import AsyncSessionLocal
+from app.database import db
 from app.hint_ladder import next_tier, tier_instruction
 from app.jwt_ws import get_user_from_token
-from app.llm_client import chat_stream
+from app.ai.model_router import chat_stream
 from app.mode_selector import select_mode
 from app.models import Concept, LearningSession, SessionTurn
-from app.orchestrator import FALLBACK_HINT_TEMPLATE
-from app.redis_client import append_message, get_working_memory
-from app.state_machine import LearnerState, Signals, transition
+from app.ai.orchestrator import FALLBACK_HINT_TEMPLATE
+from app.ai.memory.manager import append_message, get_working_memory
+from app.ai.state_manager import LearnerState, Signals, transition
 
 router = APIRouter()
 
@@ -33,12 +34,12 @@ async def ws_turn(websocket: WebSocket, session_id: uuid.UUID, token: str):
         await websocket.close(code=4401)
         return
 
-    async with AsyncSessionLocal() as db:
-        session = await db.get(LearningSession, session_id)
+    async with db.session_maker() as db_session:
+        session = await db_session.get(LearningSession, session_id)
         if not session or session.user_id != user.id:
             await websocket.close(code=4404)
             return
-        concept = await db.get(Concept, session.concept_id)
+        concept = await db_session.get(Concept, session.concept_id)
 
         try:
             while True:
@@ -87,17 +88,26 @@ async def ws_turn(websocket: WebSocket, session_id: uuid.UUID, token: str):
                     final_text = FALLBACK_HINT_TEMPLATE
                     await websocket.send_json({"event": "correction", "data": final_text})
 
-                db.add(SessionTurn(session_id=session.id, role="student", content=student_message,
+                db_session.add(SessionTurn(session_id=session.id, role="student", content=student_message,
                                     mode=mode, hint_tier=new_tier, learner_state=new_state.value))
-                db.add(SessionTurn(session_id=session.id, role="tutor", content=final_text,
+                db_session.add(SessionTurn(session_id=session.id, role="tutor", content=final_text,
                                     mode=mode, hint_tier=new_tier, learner_state=new_state.value))
                 session.current_state = new_state.value
                 session.current_mode = mode
                 session.hint_tier = new_tier
                 session.unresolved_turns = unresolved
-                db.add(session)
-                await db.commit()
+                db_session.add(session)
+                await db_session.commit()
                 await append_message(str(session_id), "tutor", final_text)
+
+                import asyncio
+                from app.ai.events import trigger_dna_update
+                signals_dict = {
+                    "ai_dependency_signals": signals.shared_ai_usage,
+                    "curiosity_score": 0.5, # WS currently doesn't compute curiosity, fallback
+                    "stuck": signals.stuck
+                }
+                asyncio.create_task(trigger_dna_update(session.user_id, signals_dict))
 
                 await websocket.send_json({"event": "done"})
         except WebSocketDisconnect:

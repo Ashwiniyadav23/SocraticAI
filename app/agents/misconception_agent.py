@@ -1,18 +1,9 @@
 """Misconception Detection Agent — Section 11.3.
 Compares the learner's claim against known concept-graph facts."""
 from app.config import settings
-from app.llm_client import chat, safe_json_parse
+from app.ai.model_router import chat, safe_json_parse
 
-SYSTEM_PROMPT = """You are the Misconception Detection Agent. Compare the student's
-latest reasoning statement against the provided canonical facts for this concept.
-
-Respond with ONLY JSON:
-{"misconception": true|false, "concept_id": "string or null", "contradiction_summary": "string or null", "confidence": 0.0-1.0}
-
-Fail-safe rule: if you are not confident there is a contradiction, set
-misconception=false. Do NOT over-flag — a false "no misconception" is safer
-than a false accusation.
-"""
+from app.ai.prompts.misconception_prompts import SYSTEM_PROMPT
 
 DEFAULT = {"misconception": False, "concept_id": None, "contradiction_summary": None, "confidence": 0.0}
 

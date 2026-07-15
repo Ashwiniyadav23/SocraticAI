@@ -1,6 +1,6 @@
 """Mastery Assessment Agent — Section 11.4 + Section 14 weighted rubric."""
 from app.config import settings
-from app.llm_client import chat, safe_json_parse
+from app.ai.model_router import chat, safe_json_parse
 
 WEIGHTS = {
     "teach_back": 0.20,
@@ -14,15 +14,7 @@ WEIGHTS = {
 MASTERY_THRESHOLD = 75
 MIN_COMPONENT_FLOOR = 50  # prevents "high average, one big gap" false mastery
 
-SYSTEM_PROMPT = """You are the Mastery Assessment Agent. Score the student's evidence
-against a rubric with 6 components, each 0-100. Be strict: a component with no
-evidence provided should score 0, not be omitted.
-
-Respond with ONLY JSON:
-{"teach_back": 0-100, "transfer_task": 0-100, "problem_variation": 0-100,
- "tracing": 0-100, "prediction": 0-100, "reasoning_quality": 0-100,
- "weak_areas": ["..."]}
-"""
+from app.ai.prompts.mastery_prompts import SYSTEM_PROMPT
 
 DEFAULT = {k: 0 for k in WEIGHTS} | {"weak_areas": []}
 

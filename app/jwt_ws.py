@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from sqlalchemy import select
 
 from app.config import settings
-from app.database import AsyncSessionLocal
+from app.database import db
 from app.models import User
 
 
@@ -19,6 +19,6 @@ async def get_user_from_token(token: str) -> User | None:
     except JWTError:
         return None
 
-    async with AsyncSessionLocal() as db:
-        result = await db.execute(select(User).where(User.id == uuid.UUID(user_id)))
+    async with db.session_maker() as db_session:
+        result = await db_session.execute(select(User).where(User.id == uuid.UUID(user_id)))
         return result.scalar_one_or_none()

@@ -18,7 +18,7 @@ class User(Base):
     __tablename__ = "users"
     id: Mapped[uuid.UUID] = uuid_pk()
     email: Mapped[str] = mapped_column(String, unique=True, index=True)
-    hashed_password: Mapped[str] = mapped_column(String)
+    hashed_password: Mapped[str | None] = mapped_column(String, nullable=True)
     role: Mapped[str] = mapped_column(String, default="student")  # student|mentor
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -81,15 +81,15 @@ class SessionTurn(Base):
     session: Mapped["LearningSession"] = relationship(back_populates="turns")
 
 
+from pgvector.sqlalchemy import Vector
+
 class MemoryFact(Base):
-    """Concept-graph canonical fact used for misconception checking (Section 12).
-    NOTE: MVP does plain keyword/LIKE retrieval instead of real vector similarity
-    to avoid a pgvector dependency. See README 'Stretch goals' to upgrade to pgvector.
-    """
+    """Concept-graph canonical fact used for misconception checking (Section 12)."""
     __tablename__ = "memory_facts"
     id: Mapped[uuid.UUID] = uuid_pk()
     concept_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("concepts.id"))
     text: Mapped[str] = mapped_column(Text)
+    embedding: Mapped[list[float] | None] = mapped_column(Vector(1536), nullable=True)
     source: Mapped[str | None] = mapped_column(String, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 

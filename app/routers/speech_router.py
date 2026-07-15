@@ -26,7 +26,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.auth import get_current_user
-from app.llm_client import transcribe_audio, synthesize_speech
+from app.ai.graphs.voice_graph import voice_graph
 from app.models import User
 
 logger = logging.getLogger("speech_router")
@@ -91,12 +91,14 @@ async def transcribe(
     safe_filename = file.filename or f"recording.{_ext_from_mime(content_type)}"
 
     try:
-        transcript = await transcribe_audio(audio_bytes, safe_filename)
+        state_input = {"audio_bytes": audio_bytes, "filename": safe_filename, "text": None, "voice": None}
+        result = await voice_graph.ainvoke(state_input)
+        transcript = result["transcript"]
     except Exception as exc:
         logger.error("STT error for user %s: %s", current_user.id, exc)
         raise HTTPException(status_code=502, detail=f"Speech recognition failed: {exc}") from exc
 
-    return {"transcript": transcript.strip()}
+    return {"transcript": transcript}
 
 
 # ---------------------------------------------------------------------------
@@ -147,7 +149,9 @@ async def synthesize(
         raise HTTPException(status_code=400, detail="Text is empty after cleaning.")
 
     try:
-        audio_bytes = await synthesize_speech(clean_text, voice=body.voice)
+        state_input = {"audio_bytes": None, "filename": None, "text": clean_text, "voice": body.voice}
+        result = await voice_graph.ainvoke(state_input)
+        audio_bytes = result["synthesized_audio"]
     except Exception as exc:
         logger.error("TTS error for user %s: %s", current_user.id, exc)
         raise HTTPException(status_code=502, detail=f"Speech synthesis failed: {exc}") from exc

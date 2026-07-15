@@ -8,11 +8,23 @@ from app.routers import auth_router, mentor_router, profile_router, reflection_r
 
 logging.basicConfig(level=logging.INFO)
 
+from contextlib import asynccontextmanager
+from app.config import settings
+from app.database import db, init_db
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    db.init(settings.DATABASE_URL)
+    await init_db()
+    yield
+    await db.close()
+
 app = FastAPI(
     title="Socratic Learning Companion API",
     version="1.0.0",
     description="MVP backend implementing PRD Phase 1 (P0): Diagnostic + Socratic "
                  "Coach + hint ladder + basic mastery check + answer-leak guard.",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -30,11 +42,6 @@ app.include_router(reflection_router.router)
 app.include_router(mentor_router.router)
 app.include_router(ws_router.router)
 app.include_router(speech_router.router)
-
-
-@app.on_event("startup")
-async def on_startup():
-    await init_db()
 
 
 @app.get("/health")

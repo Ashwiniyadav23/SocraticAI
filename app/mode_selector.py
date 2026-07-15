@@ -1,5 +1,5 @@
 """Mode Selector — Section 9 pseudo-algorithm, implemented as code."""
-from app.state_machine import LearnerState, Signals
+from app.ai.state_manager import LearnerState, Signals
 
 CURIOSITY_THRESHOLD = 0.5
 

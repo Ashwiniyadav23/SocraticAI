@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user
 from app.database import get_db
 from app.models import Concept, Mastery, Reflection, User
-from app.orchestrator import run_mastery_check
+from app.ai.orchestrator import run_mastery_check
 from app.schemas import ReflectionCreate
 
 router = APIRouter(prefix="/v1/reflection", tags=["reflection"])

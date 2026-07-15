@@ -11,6 +11,10 @@ class UserCreate(BaseModel):
     role: str = "student"
 
 
+class GoogleToken(BaseModel):
+    token: str
+
+
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
