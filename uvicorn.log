@@ -1,0 +1,60 @@
+INFO:     Will watch for changes in these directories: ['/home/sama/Desktop/SocraticAI']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [145524] using WatchFiles
+INFO:     Started server process [145527]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:43506 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33232 - "POST /v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:33246 - "POST /v1/session/auto HTTP/1.1" 200 OK
+INFO:     ('127.0.0.1', 33254) - "WebSocket /v1/ws/session/0fa4525a-0787-44d6-a8f8-79172b1c2daa/turn?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI4MzkzYjYzZS0wYzRhLTQ5ZDctYjk4My0xN2FlNTVhMDA2M2QiLCJleHAiOjE3ODQyMDQ5MTd9.tyb7gIp2Rls7RWPNrhESmJGDpRpHQOTl_etNj2H2l7U" [accepted]
+INFO:     connection open
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:topic_agent:Extracted topic: General Inquiry from message: 'hello...'
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:     connection closed
+INFO:event_bus:DNA updated for user 8393b63e-0c4a-49d7-b983-17ae55a0063d: persona=passive, dependency=0.45
+INFO:     127.0.0.1:36808 - "POST /v1/auth/login HTTP/1.1" 200 OK
+INFO:     127.0.0.1:36808 - "GET /v1/auth/me HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/audio/transcriptions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56098 - "POST /v1/speech/transcribe HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56098 - "POST /v1/session/auto HTTP/1.1" 200 OK
+INFO:     ('127.0.0.1', 56108) - "WebSocket /v1/ws/session/c255c752-4b40-405b-bdd6-b1eb35470771/turn?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJiNzJmYjI3MS1mMGVjLTQ2OWItOTUzMS05MTc4NzNhZGVjMTgiLCJleHAiOjE3ODQyMDQ5NTJ9.E7CRf3o28z-hk1_mZiDq7nbj-zVmaPUA9g04eTqZfyw" [accepted]
+INFO:     connection open
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:topic_agent:Extracted topic: Chemistry from message: 'वो टीस रियक्ट गुलुमा...'
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:event_bus:DNA updated for user b72fb271-f0ec-469b-9531-917873adec18: persona=passive, dependency=0.45
+INFO:     127.0.0.1:56098 - "OPTIONS /v1/speech/synthesize HTTP/1.1" 200 OK
+INFO:     127.0.0.1:32918 - "POST /v1/speech/synthesize HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56662 - "OPTIONS /v1/speech/transcribe HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/audio/transcriptions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56664 - "POST /v1/speech/transcribe HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:event_bus:DNA updated for user b72fb271-f0ec-469b-9531-917873adec18: persona=passive, dependency=0.40
+INFO:     127.0.0.1:56664 - "POST /v1/speech/synthesize HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/audio/transcriptions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:56664 - "POST /v1/speech/transcribe HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:event_bus:DNA updated for user b72fb271-f0ec-469b-9531-917873adec18: persona=passive, dependency=0.35
+INFO:     127.0.0.1:56664 - "POST /v1/speech/synthesize HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/audio/transcriptions "HTTP/1.1 200 OK"
+INFO:     127.0.0.1:52618 - "POST /v1/speech/transcribe HTTP/1.1" 200 OK
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:httpx:HTTP Request: POST https://api.groq.com/openai/v1/chat/completions "HTTP/1.1 200 OK"
+INFO:event_bus:DNA updated for user b72fb271-f0ec-469b-9531-917873adec18: persona=passive, dependency=0.30
+INFO:     127.0.0.1:52618 - "POST /v1/speech/synthesize HTTP/1.1" 200 OK

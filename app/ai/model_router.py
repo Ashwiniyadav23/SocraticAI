@@ -100,7 +100,7 @@ async def transcribe_audio(audio_file_bytes: bytes, filename: str) -> str:
         # Pass a tuple to file parameter representing (filename, file_bytes)
         resp = await _client.audio.transcriptions.create(
             file=(filename, audio_file_bytes),
-            model="whisper-1",
+            model="whisper-large-v3",
         )
         return resp.text or ""
     except Exception as e:
@@ -111,12 +111,14 @@ async def transcribe_audio(audio_file_bytes: bytes, filename: str) -> str:
 async def synthesize_speech(text: str, voice: str = "alloy") -> bytes:
     """Synthesizes text into speech using OpenAI compatible TTS API."""
     try:
-        resp = await _client.audio.speech.create(
-            model="tts-1",
-            voice=voice,
-            input=text,
-        )
-        return await resp.aread()
+        import io
+        from gtts import gTTS
+        
+        # gTTS generates MP3 which matches the expected output format
+        tts = gTTS(text=text, lang='en', slow=False)
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        return fp.getvalue()
     except Exception as e:
         logger.error("TTS synthesis failed: %s", e)
         raise
