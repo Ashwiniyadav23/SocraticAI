@@ -14,7 +14,8 @@ WEIGHTS = {
 MASTERY_THRESHOLD = 75
 MIN_COMPONENT_FLOOR = 50  # prevents "high average, one big gap" false mastery
 
-from app.ai.prompts.mastery_prompts import SYSTEM_PROMPT
+import time
+from app.ai.prompts.service import PromptService
 
 DEFAULT = {k: 0 for k in WEIGHTS} | {"weak_areas": []}
 
@@ -25,14 +26,21 @@ async def assess_mastery(concept_name: str, evidence: dict) -> dict:
     Missing keys are treated as no evidence for that component."""
     evidence_str = "\n".join(f"{k}: {v}" for k, v in evidence.items() if v) or "(no evidence submitted)"
 
+    system_prompt, version = await PromptService.render("mastery", {})
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": f"Concept: {concept_name}\n\nEvidence:\n{evidence_str}"},
     ]
 
+    start_time = time.time()
     try:
         raw = await chat(messages, model=settings.LLM_MODEL, temperature=0.2, max_tokens=400, json_mode=True)
-    except Exception:
+        latency = int((time.time() - start_time) * 1000)
+        tokens = (len(str(messages)) + len(raw)) // 4
+        await PromptService.log_evaluation("mastery", version, tokens, 0.0, latency, True)
+    except Exception as e:
+        latency = int((time.time() - start_time) * 1000)
+        await PromptService.log_evaluation("mastery", version, 0, 0.0, latency, False, str(e))
         return {"mastery_score": 0.0, "evidence_breakdown": DEFAULT, "eligible_for_mastered": False,
                 "reason": "assessment_failed_insufficient_evidence"}
 

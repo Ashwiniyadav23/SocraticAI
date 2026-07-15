@@ -1,7 +1,7 @@
 fastapi==0.115.0
 uvicorn[standard]==0.30.6
 sqlalchemy==2.0.35
-asyncpg==0.29.0
+asyncpg
 alembic==1.13.2
 pydantic==2.9.2
 pydantic-settings==2.5.2
@@ -23,6 +23,7 @@ ruff==0.6.7
 posthog==3.5.0
 langfuse==2.53.8
 sentry-sdk==2.14.0
-psycopg2-binary==2.9.9
+psycopg2-binary
 email-validator
- 
+jinja2==3.1.4
+jsonschema==4.23.0

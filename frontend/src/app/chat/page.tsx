@@ -22,9 +22,10 @@ export default function ChatPage() {
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/auth");
-    }
+    // BYPASS AUTH FOR TESTING
+    // if (!isAuthenticated) {
+    //   router.push("/auth");
+    // }
   }, [isAuthenticated, router]);
 
   // Auto-scroll

@@ -4,7 +4,7 @@ logger = logging.getLogger("adaptive_engine")
 
 def get_dynamic_difficulty(user_profile, session_state):
     """
-    Adjusts the difficulty scale based on the LearnerProfile's dependency trend
+    Adjusts the difficulty scale based on the SemanticMemory's dependency trend
     and the current session's state.
     """
     if user_profile and user_profile.dependency_trend_score:

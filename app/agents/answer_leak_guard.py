@@ -29,25 +29,36 @@ def _rule_based_leak(text: str) -> bool:
     return False
 
 
-from app.ai.prompts.leak_guard_prompts import SYSTEM_PROMPT
+import time
+from app.ai.prompts.service import PromptService
 
 
 async def check_leak(tutor_message: str) -> tuple[bool, str]:
     if _rule_based_leak(tutor_message):
         return True, "rule_based: complete code block or direct-answer phrase detected"
 
+    start_time = time.time()
     try:
+        system_prompt, version = await PromptService.render("leak_guard", {})
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": tutor_message},
+        ]
         raw = await chat(
-            [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": tutor_message},
-            ],
+            messages,
             model=settings.LLM_MODEL_FAST,
             temperature=0.0,
             max_tokens=100,
             json_mode=True,
         )
-    except Exception:
+        latency = int((time.time() - start_time) * 1000)
+        tokens = (len(str(messages)) + len(raw)) // 4
+        await PromptService.log_evaluation("leak_guard", version, tokens, 0.0, latency, True)
+    except Exception as e:
+        latency = int((time.time() - start_time) * 1000)
+        # Attempt to extract version if it failed after render, else fallback
+        version_str = locals().get("version", "unknown")
+        await PromptService.log_evaluation("leak_guard", version_str, 0, 0.0, latency, False, str(e))
         # Fail closed on the side of NOT blocking indefinitely — but log for review.
         return False, "classifier_unavailable"
 

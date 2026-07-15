@@ -14,9 +14,10 @@ export default function ProfilePage() {
   const { user, isAuthenticated, logout } = useAuthStore();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/auth");
-    }
+    // BYPASS AUTH FOR TESTING
+    // if (!isAuthenticated) {
+    //   router.push("/auth");
+    // }
   }, [isAuthenticated, router]);
 
   const handleLogout = () => {

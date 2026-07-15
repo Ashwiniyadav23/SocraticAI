@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import create_access_token, hash_password, verify_password
 from app.database import get_db
-from app.models import LearnerProfile, User
+from app.models import SemanticMemory, User
 from app.schemas import Token, UserCreate, UserLogin, UserOut, GoogleToken
 from app.auth import get_current_user
 
@@ -24,7 +24,7 @@ async def register(payload: UserCreate, db: AsyncSession = Depends(get_db)):
     user = User(email=payload.email, hashed_password=hash_password(payload.password), role=payload.role)
     db.add(user)
     await db.flush()
-    db.add(LearnerProfile(user_id=user.id))
+    db.add(SemanticMemory(user_id=user.id))
     await db.commit()
     await db.refresh(user)
     return user
@@ -39,16 +39,17 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)):
     return Token(access_token=create_access_token(user.id))
 
 
-import requests as http_requests
+import httpx
 
 @router.post("/google", response_model=Token)
 async def google_auth(payload: GoogleToken, db: AsyncSession = Depends(get_db)):
     try:
         # Verify the access token by fetching user info
-        response = http_requests.get(
-            "https://www.googleapis.com/oauth2/v3/userinfo",
-            headers={"Authorization": f"Bearer {payload.token}"}
-        )
+        async with httpx.AsyncClient() as client:
+            response = await client.get(
+                "https://www.googleapis.com/oauth2/v3/userinfo",
+                headers={"Authorization": f"Bearer {payload.token}"}
+            )
         
         if response.status_code != 200:
             raise HTTPException(status_code=400, detail="Invalid Google token")
@@ -68,7 +69,7 @@ async def google_auth(payload: GoogleToken, db: AsyncSession = Depends(get_db)):
             user = User(email=email, hashed_password=None, role="student")
             db.add(user)
             await db.flush()
-            db.add(LearnerProfile(user_id=user.id))
+            db.add(SemanticMemory(user_id=user.id))
             await db.commit()
             await db.refresh(user)
         

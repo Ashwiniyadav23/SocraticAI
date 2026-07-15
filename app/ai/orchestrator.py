@@ -58,6 +58,19 @@ async def run_turn(
     recent_turns = mem["messages"]
     await append_message(session_id, "student", student_message)
 
+    learning_context = None
+    if session.context_id:
+        from app.models import SessionContext
+        ctx = await db.get(SessionContext, session.context_id)
+        if ctx:
+            learning_context = {
+                "purpose": ctx.purpose,
+                "urgency": ctx.urgency,
+                "deadline": ctx.deadline.isoformat() if ctx.deadline else None,
+                "expected_depth": ctx.expected_depth,
+                "objective": ctx.objective
+            }
+
     state_input = {
         "concept_name": concept.name,
         "concept_domain": concept.domain,
@@ -68,6 +81,7 @@ async def run_turn(
         "session_hint_tier": session.hint_tier,
         "session_current_state": session.current_state,
         "user_selected_mode": user_selected_mode,
+        "learning_context": learning_context,
         "diag": None,
         "misconception_result": None,
         "signals": None,
@@ -76,7 +90,10 @@ async def run_turn(
         "new_tier": None,
         "unresolved": None,
         "tutor_message": None,
-        "leak_triggered": None
+        "leak_triggered": None,
+        "session_id": session_id,
+        "target_node": None,
+        "constraints": None
     }
     
     from app.ai.graphs.tutor_graph import tutor_graph

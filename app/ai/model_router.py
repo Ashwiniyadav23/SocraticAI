@@ -121,3 +121,15 @@ async def synthesize_speech(text: str, voice: str = "alloy") -> bytes:
         logger.error("TTS synthesis failed: %s", e)
         raise
 
+async def get_embedding(text: str, model: str = "text-embedding-3-small") -> list[float]:
+    """Generates an embedding vector for the provided text."""
+    try:
+        resp = await _client.embeddings.create(
+            input=text,
+            model=model
+        )
+        return resp.data[0].embedding
+    except Exception as e:
+        logger.error("Embedding generation failed: %s", e)
+        raise
+

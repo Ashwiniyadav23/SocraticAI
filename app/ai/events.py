@@ -2,25 +2,25 @@ import uuid
 import logging
 from sqlalchemy import select
 from app.database import db
-from app.models import LearnerProfile
+from app.models import SemanticMemory
 from app.ai.graphs.dna_graph import dna_graph
 
 logger = logging.getLogger("event_bus")
 
 async def trigger_dna_update(user_id: uuid.UUID, signals_dict: dict):
     """
-    Background task to update the longitudinal LearnerProfile
+    Background task to update the longitudinal SemanticMemory
     based on signals from the latest conversation turn.
     """
     try:
         async with db.session_maker() as session:
             # Fetch profile
             result = await session.execute(
-                select(LearnerProfile).where(LearnerProfile.user_id == user_id)
+                select(SemanticMemory).where(SemanticMemory.user_id == user_id)
             )
             profile = result.scalar_one_or_none()
             if not profile:
-                logger.warning(f"No LearnerProfile found for user {user_id}")
+                logger.warning(f"No SemanticMemory found for user {user_id}")
                 return
 
             state_input = {

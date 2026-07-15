@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     LLM_BASE_URL: str = "https://api.groq.com/openai/v1"
     LLM_MODEL: str = "llama-3.1-8b-instant"
     LLM_MODEL_FAST: str = "llama-3.1-8b-instant"
-    LLM_API_KEY: str = "REPLACE_ME"
+    LLM_API_KEY: str
 
     ENV: str = "development"
     MAX_AGENT_CALLS_PER_TURN: int = 4

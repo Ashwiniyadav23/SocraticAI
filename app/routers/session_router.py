@@ -10,6 +10,8 @@ from app.models import Concept, LearningSession, User
 from app.ai.orchestrator import run_turn
 from app.agents.topic_agent import extract_topic
 from app.schemas import SessionCreate, SessionOut, StateOut, TurnCreate, TurnOut
+from app.ai.context.models import LearningContext
+from app.models import SessionContext
 
 router = APIRouter(prefix="/v1/session", tags=["session"])
 
@@ -92,4 +94,54 @@ async def get_state(session_id: uuid.UUID, user: User = Depends(get_current_user
         learner_state=session.current_state,
         mode=session.current_mode,
         hint_tier=session.hint_tier,
+    )
+
+
+@router.post("/{session_id}/context", response_model=LearningContext)
+async def set_context(session_id: uuid.UUID, payload: LearningContext, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    session = await db.get(LearningSession, session_id)
+    if not session or session.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    context_entry = SessionContext(
+        session_id=session.id,
+        purpose=payload.purpose,
+        urgency=payload.urgency,
+        deadline=None, # date parsing if string passed
+        expected_depth=payload.expected_depth,
+        objective=payload.objective
+    )
+    if payload.deadline:
+        from datetime import datetime
+        try:
+            context_entry.deadline = datetime.fromisoformat(payload.deadline)
+        except ValueError:
+            pass
+            
+    db.add(context_entry)
+    await db.commit()
+    await db.refresh(context_entry)
+    
+    session.context_id = context_entry.id
+    await db.commit()
+    
+    return payload
+
+
+@router.get("/{session_id}/context", response_model=LearningContext)
+async def get_context(session_id: uuid.UUID, user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    session = await db.get(LearningSession, session_id)
+    if not session or session.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Session not found")
+        
+    if not session.context_id:
+        raise HTTPException(status_code=404, detail="Context not found")
+        
+    context_entry = await db.get(SessionContext, session.context_id)
+    return LearningContext(
+        purpose=context_entry.purpose,
+        urgency=context_entry.urgency,
+        deadline=context_entry.deadline.isoformat() if context_entry.deadline else None,
+        expected_depth=context_entry.expected_depth,
+        objective=context_entry.objective
     )

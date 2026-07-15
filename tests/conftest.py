@@ -21,7 +21,10 @@ def init_test_db_sync():
         # Ensure it uses psycopg2 which is default for sync postgresql in SQLAlchemy
         pass
     engine = create_engine(sync_url)
-    Base.metadata.drop_all(engine)
+    try:
+        Base.metadata.drop_all(engine)
+    except Exception as e:
+        print(f"Warning: initial drop_all failed: {e}")
     
     # Need to create vector extension
     from sqlalchemy import text
@@ -30,7 +33,10 @@ def init_test_db_sync():
     
     Base.metadata.create_all(engine)
     yield
-    Base.metadata.drop_all(engine)
+    try:
+        Base.metadata.drop_all(engine)
+    except Exception as e:
+        print(f"Warning: teardown drop_all failed: {e}")
     engine.dispose()
 
 @pytest_asyncio.fixture(autouse=True)

@@ -1,19 +1,19 @@
 import uuid
 import logging
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models import LearnerProfile
+from app.models import SemanticMemory
 from app.ai.graphs.dna_graph import dna_graph
 
 logger = logging.getLogger("dna_engine")
 
-async def update_learning_dna(db: AsyncSession, user_id: uuid.UUID, session_metrics: dict) -> LearnerProfile:
+async def update_learning_dna(db: AsyncSession, user_id: uuid.UUID, session_metrics: dict) -> SemanticMemory:
     """
-    Updates the LearnerProfile (Learning DNA) based on session telemetry.
+    Updates the SemanticMemory (Learning DNA) based on session telemetry.
     Expected metrics: curiosity_score, ai_dependency_signals, consistency_score, etc.
     """
-    profile = await db.get(LearnerProfile, user_id)
+    profile = await db.get(SemanticMemory, user_id)
     if not profile:
-        profile = LearnerProfile(user_id=user_id)
+        profile = SemanticMemory(user_id=user_id)
         db.add(profile)
     
     state_input = {
