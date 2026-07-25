@@ -20,6 +20,7 @@ class UserOut(BaseModel):
     id: uuid.UUID
     email: EmailStr
     role: str
+    status: str
 
     class Config:
         from_attributes = True
@@ -28,6 +29,10 @@ class UserOut(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class GoogleToken(BaseModel):
+    token: str
 
 
 class SessionCreate(BaseModel):

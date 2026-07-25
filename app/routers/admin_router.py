@@ -1,0 +1,155 @@
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import select, func
+from sqlalchemy.ext.asyncio import AsyncSession
+import uuid
+
+from app.auth import require_admin
+from app.database import get_db
+from app.models import User, LearningSession, SessionTurn
+from app.schemas import UserOut
+
+router = APIRouter(prefix="/v1/admin", tags=["admin"])
+
+@router.get("/students", response_model=list[UserOut])
+async def list_students(
+    search: str | None = Query(None, description="Search by email"),
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(User).where(User.role == "student")
+    if search:
+        query = query.where(User.email.ilike(f"%{search}%"))
+    result = await db.execute(query)
+    return result.scalars().all()
+
+@router.get("/mentors", response_model=list[UserOut])
+async def list_mentors(
+    search: str | None = Query(None, description="Search by email"),
+    status: str | None = Query(None, description="Filter by status (active/pending/suspended/rejected)"),
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(User).where(User.role == "mentor")
+    if search:
+        query = query.where(User.email.ilike(f"%{search}%"))
+    if status:
+        query = query.where(User.status == status)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+@router.post("/mentors/{user_id}/approve", response_model=UserOut)
+async def approve_mentor(
+    user_id: str,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        uuid_val = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+        
+    result = await db.execute(select(User).where(User.id == uuid_val, User.role == "mentor"))
+    mentor = result.scalar_one_or_none()
+    if not mentor:
+        raise HTTPException(status_code=404, detail="Mentor not found")
+    
+    mentor.status = "active"
+    await db.commit()
+    await db.refresh(mentor)
+    return mentor
+
+@router.post("/mentors/{user_id}/reject", response_model=UserOut)
+async def reject_mentor(
+    user_id: str,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        uuid_val = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+        
+    result = await db.execute(select(User).where(User.id == uuid_val, User.role == "mentor"))
+    mentor = result.scalar_one_or_none()
+    if not mentor:
+        raise HTTPException(status_code=404, detail="Mentor not found")
+    
+    mentor.status = "rejected"
+    await db.commit()
+    await db.refresh(mentor)
+    return mentor
+
+@router.post("/mentors/{user_id}/deactivate", response_model=UserOut)
+async def deactivate_mentor(
+    user_id: str,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        uuid_val = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+        
+    result = await db.execute(select(User).where(User.id == uuid_val, User.role == "mentor"))
+    mentor = result.scalar_one_or_none()
+    if not mentor:
+        raise HTTPException(status_code=404, detail="Mentor not found")
+    
+    mentor.status = "suspended"
+    await db.commit()
+    await db.refresh(mentor)
+    return mentor
+
+@router.post("/mentors/{user_id}/activate", response_model=UserOut)
+async def activate_mentor(
+    user_id: str,
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    try:
+        uuid_val = uuid.UUID(user_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid user ID format")
+        
+    result = await db.execute(select(User).where(User.id == uuid_val, User.role == "mentor"))
+    mentor = result.scalar_one_or_none()
+    if not mentor:
+        raise HTTPException(status_code=404, detail="Mentor not found")
+    
+    mentor.status = "active"
+    await db.commit()
+    await db.refresh(mentor)
+    return mentor
+
+@router.get("/stats")
+async def get_stats(
+    user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db)
+):
+    # Total students
+    students_count_res = await db.execute(select(func.count(User.id)).where(User.role == "student"))
+    total_students = students_count_res.scalar() or 0
+
+    # Total mentors
+    mentors_count_res = await db.execute(select(func.count(User.id)).where(User.role == "mentor"))
+    total_mentors = mentors_count_res.scalar() or 0
+
+    # Active users
+    active_users_res = await db.execute(select(func.count(User.id)).where(User.status == "active"))
+    active_users = active_users_res.scalar() or 0
+
+    # Total learning sessions
+    sessions_count_res = await db.execute(select(func.count(LearningSession.id)))
+    total_sessions = sessions_count_res.scalar() or 0
+
+    # AI usage (total turns generated by tutor)
+    ai_turns_res = await db.execute(select(func.count(SessionTurn.id)).where(SessionTurn.role == "tutor"))
+    ai_usage = ai_turns_res.scalar() or 0
+
+    return {
+        "total_students": total_students,
+        "total_mentors": total_mentors,
+        "active_users": active_users,
+        "total_sessions": total_sessions,
+        "ai_usage": ai_usage
+    }

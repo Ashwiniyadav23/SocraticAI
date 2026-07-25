@@ -14,17 +14,30 @@ router = APIRouter(prefix="/v1/mentor", tags=["mentor"])
 
 @router.get("/students")
 async def list_students(mentor: User = Depends(require_mentor), db: AsyncSession = Depends(get_db)):
-    """P2: mentor dashboard - list students + mastery summaries."""
+    from app.models import SemanticMemory
     result = await db.execute(select(User).where(User.role == "student"))
     students = result.scalars().all()
     out = []
     for s in students:
         m_result = await db.execute(select(Mastery).where(Mastery.user_id == s.id))
         masteries = m_result.scalars().all()
+        
+        sem_mem_result = await db.execute(select(SemanticMemory).where(SemanticMemory.user_id == s.id))
+        sem_mem = sem_mem_result.scalar_one_or_none()
+        
+        traits = sem_mem.behavioral_traits if sem_mem else {}
+        
         out.append({
             "student_id": s.id,
             "email": s.email,
             "mastery_summary": [{"concept_id": m.concept_id, "score": m.mastery_score} for m in masteries],
+            "confidence": traits.get("confidence", 0.5),
+            "ai_dependency": traits.get("ai_dependency", 0.5),
+            "curiosity_score": traits.get("curiosity_score", 0.5),
+            "independent_thinking": traits.get("independent_thinking", 0.5),
+            "learning_velocity": traits.get("learning_velocity", 0.5),
+            "weak_concepts": sem_mem.weak_topics if sem_mem else [],
+            "strong_concepts": sem_mem.strong_topics if sem_mem else [],
         })
     return out
 

@@ -18,8 +18,9 @@ class User(Base):
     __tablename__ = "users"
     id: Mapped[uuid.UUID] = uuid_pk()
     email: Mapped[str] = mapped_column(String, unique=True, index=True)
-    hashed_password: Mapped[str] = mapped_column(String)
-    role: Mapped[str] = mapped_column(String, default="student")  # student|mentor
+    hashed_password: Mapped[str | None] = mapped_column(String, nullable=True)
+    role: Mapped[str] = mapped_column(String, default="student")  # student|mentor|admin
+    status: Mapped[str] = mapped_column(String, default="active") # active|pending|suspended
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 

@@ -55,4 +55,18 @@ async def require_mentor(user: User = Depends(get_current_user)) -> User:
             status_code=403,
             detail=f"Access denied: Mentor role required. Your account has role='{user.role}'."
         )
+    if user.status != "active":
+        raise HTTPException(
+            status_code=403,
+            detail="Access denied: Mentor account is pending approval."
+        )
+    return user
+
+
+async def require_admin(user: User = Depends(get_current_user)) -> User:
+    if user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied: Admin role required. Your account has role='{user.role}'."
+        )
     return user

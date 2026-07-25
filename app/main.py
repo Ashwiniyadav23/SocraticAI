@@ -3,8 +3,11 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.database import init_db
-from app.routers import auth_router, mentor_router, profile_router, reflection_router, session_router, ws_router, speech_router
+from app.database import init_db, seed_default_admin
+from app.routers import (
+    admin_router, auth_router, mentor_router, profile_router,
+    reflection_router, session_router, speech_router, ws_router,
+)
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,7 +20,12 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten in production
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3001",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,11 +38,13 @@ app.include_router(reflection_router.router)
 app.include_router(mentor_router.router)
 app.include_router(ws_router.router)
 app.include_router(speech_router.router)
+app.include_router(admin_router.router)
 
 
 @app.on_event("startup")
 async def on_startup():
     await init_db()
+    await seed_default_admin()
 
 
 @app.get("/health")
